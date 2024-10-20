@@ -61,6 +61,7 @@ function AppContent() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <Link to="/" className="text-xl font-semibold">
+                <span className="italic font-thin text-base">based</span>
                 MacroTracker
               </Link>
             </div>

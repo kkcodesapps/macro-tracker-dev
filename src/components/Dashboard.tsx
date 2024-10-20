@@ -195,8 +195,12 @@ const Dashboard = () => {
           } text-blue-900 transition-colors duration-200`}
           disabled={isRefreshing}
         >
-          <RotateCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span className="ml-2">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+          <RotateCw
+            className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`}
+          />
+          <span className="ml-2">
+            {isRefreshing ? "Refreshing..." : "Refresh"}
+          </span>
         </button>
       </div>
       <div

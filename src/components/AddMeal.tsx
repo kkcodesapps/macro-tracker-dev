@@ -476,7 +476,7 @@ const AddMeal = () => {
               placeholder="Search foods..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`w-full p-2 mb-4 rounded ${
+              className={`w-full px-4 py-2 mb-4 rounded ${
                 darkMode ? "bg-gray-700 text-white" : "bg-gray-100"
               }`}
             />
