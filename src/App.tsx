@@ -28,9 +28,6 @@ import { MealsProvider } from "./MealsContext";
 import { DataProvider } from "./contexts/DataContext";
 import { ToastProvider } from "./contexts/ToastContext";
 
-// another test just to make sure this works
-//test
-
 function AppContent() {
   const [session, setSession] = useState<any>(null);
   const { darkMode, toggleDarkMode } = useTheme();
