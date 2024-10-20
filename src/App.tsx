@@ -12,6 +12,7 @@ import { ThemeProvider, useTheme } from './ThemeContext';
 import { MealsProvider } from './MealsContext';
 import { DataProvider } from './contexts/DataContext';
 import { ToastProvider } from './contexts/ToastContext';
+// test comment
 
 function AppContent() {
   const [session, setSession] = useState<any>(null);
