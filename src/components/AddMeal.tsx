@@ -549,15 +549,15 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
                     darkMode ? "text-gray-200" : "text-gray-700"
                   }`}
                 >
-                  Protein (g)
+                  Fat (g)
                 </label>
                 <input
                   type="number"
-                  value={quickMacro.protein}
+                  value={quickMacro.fat}
                   onChange={(e) =>
                     setQuickMacro({
                       ...quickMacro,
-                      protein: Number(e.target.value),
+                      fat: Number(e.target.value),
                     })
                   }
                   className={`mt-1 py-2 px-4 block w-full rounded-md ${
@@ -567,6 +567,7 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
                   } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
                 />
               </div>
+
               <div>
                 <label
                   className={`block text-sm font-medium ${
@@ -597,15 +598,15 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
                     darkMode ? "text-gray-200" : "text-gray-700"
                   }`}
                 >
-                  Fat (g)
+                  Protein (g)
                 </label>
                 <input
                   type="number"
-                  value={quickMacro.fat}
+                  value={quickMacro.protein}
                   onChange={(e) =>
                     setQuickMacro({
                       ...quickMacro,
-                      fat: Number(e.target.value),
+                      protein: Number(e.target.value),
                     })
                   }
                   className={`mt-1 py-2 px-4 block w-full rounded-md ${
