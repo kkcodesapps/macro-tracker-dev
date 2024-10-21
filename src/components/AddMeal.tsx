@@ -28,7 +28,11 @@ interface QuickMacro {
   fat: number;
 }
 
-const AddMeal = () => {
+interface AddMealProps {
+  className?: string;
+}
+
+const AddMeal: React.FC<AddMealProps> = ({ className }) => {
   const [mealName, setMealName] = useState("");
   const [selectedFoods, setSelectedFoods] = useState<SelectedFood[]>([]);
   const [protein, setProtein] = useState(0);
@@ -215,7 +219,7 @@ const AddMeal = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className={`max-w-md mx-auto ${className}`}>
       <h2 className="text-2xl font-semibold mb-6">Add Meal</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Meal Name Input */}

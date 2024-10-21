@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import { ChevronLeft, ChevronRight, RefreshCw, RotateCw } from "lucide-react";
 import { useTheme } from "../ThemeContext";
 import {
@@ -25,6 +31,26 @@ const Dashboard = () => {
     useData();
   const { showToast } = useToast();
 
+  const panelCount = 3;
+  const panelWidthPercentage = 100;
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [dates, setDates] = useState([]);
+  const containerRef = useRef(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+
+  const translateOffset = (100 - panelWidthPercentage) / 2;
+
+  useEffect(() => {
+    const initialDates = [
+      subDays(selectedDate, 1),
+      selectedDate,
+      addDays(selectedDate, 1),
+    ];
+    setDates(initialDates);
+  }, [selectedDate]);
+
   const fetchDailyTotals = useCallback(
     async (date: Date) => {
       setIsLoading(true);
@@ -41,23 +67,109 @@ const Dashboard = () => {
   );
 
   useEffect(() => {
-    if (!dailyTotals[selectedDate.toISOString().split("T")[0]]) {
-      fetchDailyTotals(selectedDate);
-    }
+    dates.forEach((date) => {
+      if (!dailyTotals[date.toISOString().split("T")[0]]) {
+        fetchDailyTotals(date);
+      }
+    });
     prefetchDailyTotals(selectedDate);
-  }, [selectedDate, fetchDailyTotals, prefetchDailyTotals, dailyTotals]);
+  }, [dates, fetchDailyTotals, prefetchDailyTotals, dailyTotals, selectedDate]);
 
   useEffect(() => {
     localStorage.setItem("showRemaining", JSON.stringify(showRemaining));
   }, [showRemaining]);
 
-  const goToPreviousDay = () => {
-    setSelectedDate((prevDate) => subDays(prevDate, 1));
+  const updateDates = (direction) => {
+    setDates((prevDates) => {
+      if (direction === "next") {
+        return [prevDates[1], prevDates[2], addDays(prevDates[2], 1)];
+      } else {
+        return [subDays(prevDates[0], 1), prevDates[0], prevDates[1]];
+      }
+    });
+    setSelectedDate((prevDate) =>
+      direction === "next" ? addDays(prevDate, 1) : subDays(prevDate, 1)
+    );
   };
 
-  const goToNextDay = () => {
-    setSelectedDate((prevDate) => addDays(prevDate, 1));
+  const moveCarousel = (direction) => {
+    if (isTransitioning) return;
+
+    setIsTransitioning(true);
+    containerRef.current.style.transition = "transform 0.2s ease-in-out";
+
+    if (direction === "next") {
+      setCurrentIndex((prevIndex) => prevIndex + 1);
+      containerRef.current.style.transform = `translateX(-${
+        (currentIndex + 1) * panelWidthPercentage + translateOffset
+      }%)`;
+    } else {
+      setCurrentIndex((prevIndex) => prevIndex - 1);
+      containerRef.current.style.transform = `translateX(-${
+        (currentIndex - 1) * panelWidthPercentage + translateOffset
+      }%)`;
+    }
+
+    setTimeout(() => {
+      setIsTransitioning(false);
+      repositionIfNeeded(direction);
+    }, 200);
   };
+
+  const repositionIfNeeded = (direction) => {
+    containerRef.current.style.transition = "none";
+    setCurrentIndex(1);
+    containerRef.current.style.transform = `translateX(-${
+      panelWidthPercentage + translateOffset
+    }%)`;
+    updateDates(direction);
+  };
+
+  const nextSlide = () => moveCarousel("next");
+  const prevSlide = () => moveCarousel("prev");
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.changedTouches[0].screenX;
+    // e.preventDefault(); // Prevents the background from moving
+  };
+
+  const handleTouchEnd = (e) => {
+    touchEndX.current = e.changedTouches[0].screenX;
+    if (touchStartX.current - touchEndX.current > 50) {
+      nextSlide();
+    } else if (touchEndX.current - touchStartX.current > 50) {
+      prevSlide();
+    }
+    // e.preventDefault(); // Prevents the background from moving
+  };
+
+  useEffect(() => {
+    const container = containerRef.current;
+    container.addEventListener("touchstart", handleTouchStart, {
+      passive: false,
+    });
+    container.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+    // Prevent vertical scrolling
+    const preventVerticalScroll = (e) => {
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("touchmove", preventVerticalScroll, {
+      passive: false,
+    });
+
+    return () => {
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchend", handleTouchEnd, {
+        passive: true,
+      });
+      window.removeEventListener("touchmove", preventVerticalScroll);
+      document.body.style.overflow = "auto";
+    };
+  }, [currentIndex]);
 
   const toggleRemainingMacros = () => {
     setShowRemaining((prev) => !prev);
@@ -89,8 +201,8 @@ const Dashboard = () => {
     return null;
   }, [userSettings, selectedDate]);
 
-  const memoizedProgressBars = useMemo(() => {
-    const dateKey = selectedDate.toISOString().split("T")[0];
+  const renderProgressBars = (date: Date) => {
+    const dateKey = date.toISOString().split("T")[0];
     const dailyTotal = dailyTotals[dateKey] || {
       calories: 0,
       protein: 0,
@@ -180,11 +292,63 @@ const Dashboard = () => {
         })}
       </div>
     );
-  }, [dailyTotals, userSettings, showRemaining, darkMode, selectedDate]);
+  };
+
+  const renderPanel = (date: Date, index: number) => (
+    <div
+      key={index}
+      className={`flex-shrink-0 transition-transform duration-200 ease-out p-4`}
+      style={{ width: `${panelWidthPercentage}%` }}
+    >
+      <div
+        className={`${
+          darkMode ? "bg-gray-800" : "bg-white"
+        } shadow rounded-lg p-6`}
+      >
+        <div className="text-left mb-8">
+          <div className="flex items-center justify-center space-x-4 mb-4">
+            <div className="text-lg font-medium">
+              <div className="text-sm text-gray-500">
+                {format(date, "MMMM d, yyyy")}
+              </div>
+            </div>
+          </div>
+          <div
+            className={`flex items-center ${
+              bulkCutDay >= 1 ? "justify-between" : "justify-end"
+            }`}
+          >
+            {bulkCutDay !== null && bulkCutDay >= 1 && bulkCutDay !== 0 && (
+              <div className={`text-lg ${bulkCutDay === 0 && "hidden"}`}>
+                Day {bulkCutDay + differenceInDays(date, selectedDate)}
+              </div>
+            )}
+            <button
+              onClick={toggleRemainingMacros}
+              className={`flex items-center p-2 text-sm rounded-full ${
+                darkMode
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-blue-100 hover:bg-blue-200"
+              } text-blue-900`}
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        {isLoading && !dailyTotals[date.toISOString().split("T")[0]] ? (
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
+        ) : (
+          renderProgressBars(date)
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center px-4">
         <h2 className="text-2xl font-semibold">Dashboard</h2>
         <button
           onClick={handleRefresh}
@@ -203,56 +367,29 @@ const Dashboard = () => {
           </span>
         </button>
       </div>
-      <div
-        className={`${
-          darkMode ? "bg-gray-800" : "bg-white"
-        } shadow rounded-lg p-6`}
-      >
-        <div className="text-left mb-8">
-          <div className="flex items-center justify-center space-x-4 mb-8">
-            <button
-              onClick={goToPreviousDay}
-              className={`p-1 rounded-full ${
-                darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"
-              }`}
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </button>
-            <div className="text-lg font-medium">
-              <div className="text-sm text-gray-500">
-                {format(selectedDate, "MMMM d, yyyy")}
-              </div>
-            </div>
-            <button
-              onClick={goToNextDay}
-              className={`p-1 rounded-full ${
-                darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"
-              }`}
-            >
-              <ChevronRight className="h-6 w-6" />
-            </button>
-          </div>
-          <div className="flex justify-between">
-            {bulkCutDay > 0 && <div className="text-lg">Day {bulkCutDay}</div>}
-            <button
-              onClick={toggleRemainingMacros}
-              className={`flex items-center p-2 text-sm rounded-full ${
-                darkMode
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "bg-blue-100 hover:bg-blue-200"
-              } text-blue-900`}
-            >
-              <RefreshCw className="h-4 w-4" />
-            </button>
-          </div>
+      <div className=" overflow-hidden rounded-lg">
+        <div
+          ref={containerRef}
+          className="flex transition-transform duration-200 ease-out"
+          style={{
+            transform: `translateX(-${panelWidthPercentage}%)`,
+            width: `${panelWidthPercentage}%`,
+          }}
+        >
+          {dates.map((date, index) => renderPanel(date, index))}
         </div>
-        {isLoading && !dailyTotals[selectedDate.toISOString().split("T")[0]] ? (
-          <div className="flex justify-center items-center h-40">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-          </div>
-        ) : (
-          memoizedProgressBars
-        )}
+        <button
+          className="absolute left-4 -bottom-10 transform -translate-y-1/2 bg-white bg-opacity-50 hover:bg-opacity-75 text-gray-800 font-bold py-2 px-4 rounded-full shadow-lg transition-all duration-200 hidden md:block"
+          onClick={prevSlide}
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+        <button
+          className="absolute right-4 -bottom-10 transform -translate-y-1/2 bg-white bg-opacity-50 hover:bg-opacity-75 text-gray-800 font-bold py-2 px-4 rounded-full shadow-lg transition-all duration-200 hidden md:block"
+          onClick={nextSlide}
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
       </div>
     </div>
   );

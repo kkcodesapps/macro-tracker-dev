@@ -5,7 +5,11 @@ import { useData } from "../contexts/DataContext";
 import { useNavigate } from "react-router-dom";
 import packageInfo from "../../package.json";
 
-const Settings = () => {
+interface SettingsProps {
+  className?: string;
+}
+
+const Settings: React.FC<SettingsProps> = ({ className }) => {
   const [proteinGoal, setProteinGoal] = useState("150");
   const [carbGoal, setCarbGoal] = useState("250");
   const [fatGoal, setFatGoal] = useState("70");
@@ -126,7 +130,7 @@ const Settings = () => {
   const inputLayoutClasses = "py-2 px-4";
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className={`max-w-md mx-auto ${className}`}>
       <h2 className="text-2xl font-semibold mb-6">Settings</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>

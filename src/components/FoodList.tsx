@@ -5,7 +5,11 @@ import { useTheme } from "../ThemeContext";
 import { useData } from "../contexts/DataContext";
 import { useToast } from "../contexts/ToastContext";
 
-const FoodList = () => {
+interface FoodListProps {
+  className?: string;
+}
+
+const FoodList: React.FC<FoodListProps> = ({ className }) => {
   const [newFood, setNewFood] = useState({
     name: "",
     protein: "",
@@ -90,7 +94,7 @@ const FoodList = () => {
   const inputLayoutClasses = "py-2 px-4";
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className={`max-w-md mx-auto ${className}`}>
       <h2 className="text-2xl font-semibold mb-6">Food List</h2>
       <form onSubmit={addFood} className="mb-8 space-y-4">
         <div>
@@ -202,15 +206,43 @@ const FoodList = () => {
         {foods.map((food) => (
           <li
             key={food.id}
-            className={`flex justify-between items-center p-3 rounded-lg ${
-              darkMode ? "bg-gray-700" : "bg-gray-100"
+            className={`flex justify-between items-center p-3 rounded-lg border ${
+              darkMode
+                ? "bg-gray-700 border-gray-700"
+                : "bg-gray-100  border-gray-200"
             }`}
           >
             <div>
               <h4 className="font-medium">{food.name}</h4>
-              <p className="text-sm">
-                P: {food.protein}g | C: {food.carbs}g | F: {food.fat}g
-              </p>
+              <div className="flex space-x-2 mt-1">
+                <span
+                  className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${
+                    darkMode
+                      ? "bg-red-900 text-red-200"
+                      : "bg-red-100 text-red-600"
+                  }`}
+                >
+                  P: {food.protein}g
+                </span>
+                <span
+                  className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${
+                    darkMode
+                      ? "bg-green-900 text-green-200"
+                      : "bg-green-100 text-green-600"
+                  }`}
+                >
+                  C: {food.carbs}g
+                </span>
+                <span
+                  className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${
+                    darkMode
+                      ? "bg-amber-900 text-amber-200"
+                      : "bg-amber-100 text-amber-600"
+                  }`}
+                >
+                  F: {food.fat}g
+                </span>
+              </div>
             </div>
             <button
               onClick={() => openDeleteModal(food.id, food.name)}

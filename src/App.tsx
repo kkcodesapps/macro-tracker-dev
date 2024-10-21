@@ -49,7 +49,7 @@ function AppContent() {
 
   return (
     <div
-      className={`min-h-screen pb-[5rem] ${
+      className={`min-h-screen overflow-hidden pb-[5rem] ${
         darkMode ? "dark bg-gray-900 text-white" : "bg-gray-100 text-gray-900"
       }`}
     >
@@ -81,13 +81,13 @@ function AppContent() {
           </div>
         </div>
       </nav>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto py-8 relative">
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/add-meal" element={<AddMeal />} />
-          <Route path="/meal-list" element={<MealList />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/foods" element={<FoodList />} />
+          <Route path="/add-meal" element={<AddMeal className="px-4" />} />
+          <Route path="/meal-list" element={<MealList className="px-4" />} />
+          <Route path="/settings" element={<Settings className="px-4" />} />
+          <Route path="/foods" element={<FoodList className="px-4" />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
