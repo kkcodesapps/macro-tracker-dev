@@ -209,7 +209,18 @@ const MealList: React.FC<MealListProps> = ({ className }) => {
   };
 
   if (loading) {
-    return <div>Loading meals...</div>;
+    return (
+      <div className="flex flex-col justify-center items-center px-4">
+        <div
+          className={`loader ease-linear rounded-full border-4 border-t-4 ${
+            darkMode ? "border-gray-800" : "border-gray-200"
+          } h-16 w-16 ${
+            darkMode ? "border-t-gray-200" : "border-t-gray-900"
+          } animate-spin`}
+        ></div>
+        <p className="mt-4">Loading meals...</p>
+      </div>
+    );
   }
 
   if (error) {
