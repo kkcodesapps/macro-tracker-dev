@@ -104,15 +104,6 @@ function AppContent() {
               <span className="text-xs mt-1">Home</span>
             </Link>
             <Link
-              to="/add-meal"
-              className={`flex flex-col items-center ${
-                location.pathname === "/add-meal" ? "text-blue-500" : ""
-              }`}
-            >
-              <PlusCircle className="h-6 w-6" />
-              <span className="text-xs mt-1">Add Meal</span>
-            </Link>
-            <Link
               to="/meal-list"
               className={`flex flex-col items-center ${
                 location.pathname === "/meal-list" ? "text-blue-500" : ""
@@ -120,6 +111,15 @@ function AppContent() {
             >
               <List className="h-6 w-6" />
               <span className="text-xs mt-1">Meals</span>
+            </Link>
+            <Link
+              to="/add-meal"
+              className={`flex flex-col items-center ${
+                location.pathname === "/add-meal" ? "text-blue-500" : ""
+              }`}
+            >
+              <PlusCircle className="h-6 w-6" />
+              <span className="text-xs mt-1">Add Meal</span>
             </Link>
             <Link
               to="/foods"
