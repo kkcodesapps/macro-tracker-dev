@@ -14,6 +14,7 @@ import {
   differenceInDays,
   parseISO,
   startOfDay,
+  isToday,
 } from "date-fns";
 import { useData } from "../contexts/DataContext";
 import { useToast } from "../contexts/ToastContext";
@@ -130,7 +131,6 @@ const Dashboard = () => {
 
   const handleTouchStart = (e) => {
     touchStartX.current = e.changedTouches[0].screenX;
-    // e.preventDefault(); // Prevents the background from moving
   };
 
   const handleTouchEnd = (e) => {
@@ -140,7 +140,6 @@ const Dashboard = () => {
     } else if (touchEndX.current - touchStartX.current > 50) {
       prevSlide();
     }
-    // e.preventDefault(); // Prevents the background from moving
   };
 
   useEffect(() => {
@@ -150,7 +149,6 @@ const Dashboard = () => {
     });
     container.addEventListener("touchend", handleTouchEnd, { passive: true });
 
-    // Prevent vertical scrolling
     const preventVerticalScroll = (e) => {
       if (e.cancelable) {
         e.preventDefault();
@@ -178,7 +176,7 @@ const Dashboard = () => {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await fetchDailyTotals(selectedDate);
+      await getDailyTotals(selectedDate, true);
       showToast("Data refreshed successfully", "success");
     } catch (error) {
       console.error("Error refreshing data:", error);
@@ -302,14 +300,25 @@ const Dashboard = () => {
     >
       <div
         className={`${
-          darkMode ? "bg-gray-800" : "bg-white"
-        } shadow rounded-lg p-6`}
+          darkMode ? "bg-zinc-800" : "bg-white"
+        } shadow rounded-lg p-6 relative`}
       >
         <div className="text-left mb-8">
           <div className="flex items-center justify-center space-x-4 mb-4">
-            <div className="text-lg font-medium">
+            <div className="text-lg font-medium relative">
               <div className="text-sm text-gray-500">
                 {format(date, "MMMM d, yyyy")}
+                {isToday(date) && (
+                  <span
+                    className={`absolute -right-16 top-0 px-2 py-0.5 text-xs font-semibold rounded-full ${
+                      darkMode
+                        ? "bg-blue-900 text-blue-200"
+                        : "bg-blue-100 text-blue-800"
+                    }`}
+                  >
+                    Today
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -367,7 +376,7 @@ const Dashboard = () => {
           </span>
         </button>
       </div>
-      <div className=" overflow-hidden rounded-lg">
+      <div className="overflow-hidden rounded-lg">
         <div
           ref={containerRef}
           className="flex transition-transform duration-200 ease-out"

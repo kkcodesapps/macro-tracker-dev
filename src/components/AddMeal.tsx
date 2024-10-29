@@ -5,6 +5,7 @@ import { useTheme } from "../ThemeContext";
 import { useMeals } from "../MealsContext";
 import { useData } from "../contexts/DataContext";
 import { useToast } from "../contexts/ToastContext";
+import { useLocation, useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -14,6 +15,7 @@ interface Food {
   protein: number;
   carbs: number;
   fat: number;
+  serving_size?: number;
 }
 
 interface SelectedFood extends Food {
@@ -26,6 +28,7 @@ interface QuickMacro {
   protein: number;
   carbs: number;
   fat: number;
+  serving_size?: number;
 }
 
 interface AddMealProps {
@@ -44,22 +47,54 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
   const [showQuickMacroModal, setShowQuickMacroModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [recentFoods, setRecentFoods] = useState<Food[]>([]);
-  const [quickMacro, setQuickMacro] = useState<QuickMacro>({
-    name: "Quick Macro",
-    protein: 0,
-    carbs: 0,
-    fat: 0,
-  });
+  const [editingMealId, setEditingMealId] = useState<number | null>(null);
+const [quickMacro, setQuickMacro] = useState<QuickMacro>({
+  name: "",
+  protein: undefined,
+  carbs: undefined,
+  fat: undefined,
+  serving_size: undefined,
+});
+
   const { darkMode } = useTheme();
-  const { addMeal } = useMeals();
+  const { addMeal, updateMeal } = useMeals();
   const { foods, fetchFoods } = useData();
   const { showToast } = useToast();
   const datePickerRef = useRef(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchFoods();
-    fetchRecentFoods();
-  }, [fetchFoods]);
+useEffect(() => {
+  fetchFoods();
+  // Check if we're editing an existing meal
+  if (location.state?.meal) {
+
+    const meal = location.state.meal;
+    setEditingMealId(meal.id);
+    setMealName(meal.name);
+    setMealDate(new Date(meal.created_at));
+    setProtein(meal.protein);
+    setCarbs(meal.carbs);
+    setFat(meal.fat);
+    setCalories(meal.calories);
+    console.log('testst', meal);
+    
+    if (meal.foods) {
+      const transformedFoods = meal.foods.map(food => ({
+        id: food.food_id || food.id, // Handle both regular foods and quick macros
+        name: food.food_name || food.name,
+        protein: food.food_protein || food.protein,
+        carbs: food.food_carbs || food.carbs,
+        fat: food.food_fat || food.fat,
+        quantity: food.quantity,
+        serving_size: food.serving_size,
+        isQuickMacro: food.is_quick_macro
+      }));
+      setSelectedFoods(transformedFoods);
+    }
+  }
+}, [location.state, fetchFoods]);
+
 
   useEffect(() => {
     calculateTotals();
@@ -118,7 +153,7 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
-      const newMeal = {
+      const mealData = {
         name: mealName,
         protein,
         carbs,
@@ -129,29 +164,34 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
       };
 
       const foodsToAdd = selectedFoods.map((food) => ({
-        food_id: food.id,
+        food_id: food.isQuickMacro ? null : food.id,
         quantity: food.quantity,
         isQuickMacro: food.isQuickMacro,
         name: food.name,
         protein: food.protein,
         carbs: food.carbs,
         fat: food.fat,
+        serving_size: food.serving_size
       }));
 
-      await addMeal(newMeal, foodsToAdd);
+      if (editingMealId) {
+        await updateMeal(editingMealId, {
+          ...mealData,
+          foods: foodsToAdd
+        });
+        showToast("Meal updated successfully!", "success");
+      } else {
+        await addMeal(mealData, foodsToAdd);
+        showToast("Meal added successfully!", "success");
+      }
 
-      setMealName("");
-      setSelectedFoods([]);
-      setProtein(0);
-      setCarbs(0);
-      setFat(0);
-      setCalories(0);
-      setMealDate(new Date());
-
-      showToast("Meal added successfully!", "success");
+      navigate('/meal-list');
     } catch (error) {
-      console.error("Error adding meal:", error);
-      showToast("Failed to add meal. Please try again.", "error");
+      console.error("Error saving meal:", error);
+      showToast(
+        `Failed to ${editingMealId ? 'update' : 'add'} meal. Please try again.`,
+        "error"
+      );
     }
   };
 
@@ -188,20 +228,28 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
     );
   };
 
-  const addQuickMacro = () => {
-    const newQuickMacro: SelectedFood = {
-      id: Date.now(), // Use timestamp as a temporary ID
-      name: quickMacro.name,
-      protein: quickMacro.protein,
-      carbs: quickMacro.carbs,
-      fat: quickMacro.fat,
-      quantity: 1,
-      isQuickMacro: true,
-    };
-    setSelectedFoods([...selectedFoods, newQuickMacro]);
-    setShowQuickMacroModal(false);
-    setQuickMacro({ name: "Quick Macro", protein: 0, carbs: 0, fat: 0 });
+const addQuickMacro = () => {
+  const newQuickMacro: SelectedFood = {
+    id: Date.now(),
+    name: quickMacro.name || "Quick Macro",
+    protein: quickMacro.protein || 0,
+    carbs: quickMacro.carbs || 0,
+    fat: quickMacro.fat || 0,
+    quantity: 1,
+    serving_size: quickMacro.serving_size,
+    isQuickMacro: true,
   };
+
+  setSelectedFoods([...selectedFoods, newQuickMacro]);
+  setShowQuickMacroModal(false);
+  setQuickMacro({
+    name: "",
+    protein: undefined,
+    carbs: undefined,
+    fat: undefined,
+    serving_size: undefined,
+  });
+};
 
   const filteredFoods = searchTerm
     ? foods.filter((food) =>
@@ -212,7 +260,7 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
   const datePickerStyles = {
     input: `mt-1 block w-full rounded-md px-4 py-2 ${
       darkMode
-        ? "bg-gray-700 border-gray-600 text-white"
+        ? "bg-zinc-800 border-zinc-700 text-white"
         : "bg-white border-gray-300"
     } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`,
     popper: "mt-14",
@@ -220,9 +268,10 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
 
   return (
     <div className={`max-w-md mx-auto ${className}`}>
-      <h2 className="text-2xl font-semibold mb-6">Add Meal</h2>
+      <h2 className="text-2xl font-semibold mb-6">
+        {editingMealId ? 'Edit Meal' : 'Add Meal'}
+      </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Meal Name Input */}
         <div>
           <label
             htmlFor="mealName"
@@ -239,14 +288,13 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
             onChange={(e) => setMealName(e.target.value)}
             className={`mt-1 block w-full rounded-md px-4 py-2 ${
               darkMode
-                ? "bg-gray-700 border-gray-600"
+                ? "bg-zinc-800 border-zinc-700"
                 : "bg-white border-gray-300"
             } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
             required
           />
         </div>
 
-        {/* Meal Date Picker */}
         <div>
           <label
             htmlFor="mealDate"
@@ -283,12 +331,11 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
                   },
                 },
               ]}
-              showPopperArrow={false} // This line removes the tooltip-esq icon
+              showPopperArrow={false}
             />
           </div>
         </div>
 
-        {/* Selected Foods List */}
         <div>
           <label
             className={`block text-sm font-medium ${
@@ -302,10 +349,17 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
               <li
                 key={food.id}
                 className={`flex items-center justify-between p-2 rounded ${
-                  darkMode ? "bg-gray-700" : "bg-gray-100"
+                  darkMode ? "bg-zinc-800" : "bg-gray-100"
                 }`}
               >
-                <span>{food.name}</span>
+                <div>
+                  <span>{food.name}</span>
+                  {food.serving_size && (
+                    <span className="text-sm text-gray-500 ml-2">
+                      ({food.serving_size}g per serving)
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center space-x-2">
                   <button
                     type="button"
@@ -343,7 +397,7 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
                     onClick={() => removeFoodFromMeal(food.id)}
                     className={`p-1 rounded-full ${
                       darkMode
-                        ? "bg-gray-600 hover:bg-gray-500"
+                        ? "bg-zinc-700 hover:bg-zinc-600"
                         : "bg-gray-200 hover:bg-gray-300"
                     }`}
                   >
@@ -383,7 +437,6 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
           </div>
         </div>
 
-        {/* Macronutrient Totals */}
         <div className="flex w-full justify-between pt-4">
           <div>
             <label
@@ -436,7 +489,7 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
         </div>
         <div
           className={`w-full text-right border-t border-dashed ${
-            darkMode ? "border-gray-500" : "border-gray-400"
+            darkMode ? "border-zinc-700" : "border-gray-400"
           } pt-4`}
         >
           <label
@@ -462,16 +515,15 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
               : "bg-green-500 hover:bg-green-600"
           } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500`}
         >
-          Add Meal
+          {editingMealId ? 'Update Meal' : 'Add Meal'}
         </button>
       </form>
 
-      {/* Food Selection Modal */}
       {showFoodModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <div
             className={`${
-              darkMode ? "bg-gray-800" : "bg-white"
+              darkMode ? "bg-zinc-900" : "bg-white"
             } rounded-lg p-6 w-full max-w-md`}
           >
             <h3 className="text-lg font-medium mb-4">Add Food to Meal</h3>
@@ -481,7 +533,7 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={`w-full px-4 py-2 mb-4 rounded ${
-                darkMode ? "bg-gray-700 text-white" : "bg-gray-100"
+                darkMode ? "bg-zinc-800 text-white" : "bg-gray-100"
               }`}
             />
             <ul className="max-h-60 overflow-y-auto">
@@ -490,11 +542,16 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
                   key={food.id}
                   onClick={() => addFoodToMeal(food)}
                   className={`p-2 cursor-pointer ${
-                    darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    darkMode ? "hover:bg-zinc-800" : "hover:bg-gray-100"
                   }`}
                 >
                   {food.name} - P: {food.protein}g, C: {food.carbs}g, F:{" "}
                   {food.fat}g
+                  {food.serving_size && (
+                    <span className="text-sm text-gray-500 ml-2">
+                      ({food.serving_size}g per serving)
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -512,12 +569,11 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
         </div>
       )}
 
-      {/* Quick Macro Modal */}
       {showQuickMacroModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <div
             className={`${
-              darkMode ? "bg-gray-800" : "bg-white"
+              darkMode ? "bg-zinc-900" : "bg-white"
             } rounded-lg p-6 w-full max-w-md`}
           >
             <h3 className="text-lg font-medium mb-4">Add Quick Macro</h3>
@@ -538,9 +594,36 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
                   }
                   className={`mt-1 py-2 px-4 block w-full rounded-md ${
                     darkMode
-                      ? "bg-gray-700 border-gray-600"
+                      ? "bg-zinc-800 border-zinc-700"
                       : "bg-white border-gray-300"
                   } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
+                />
+              </div>
+              <div>
+                <label
+                  className={`block text-sm font-medium ${
+                    darkMode ? "text-gray-200" : "text-gray-700"
+                  }`}
+                >
+                  Serving Size (g)
+                </label>
+                <input
+                  type="number"
+                  value={quickMacro.serving_size || ''}
+                  onChange={(e) =>
+                    setQuickMacro({
+                      ...quickMacro,
+                      serving_size: e.target.value ? Number(e.target.value) : undefined,
+                    })
+                  }
+                  className={`mt-1 py-2 px-4 block w-full rounded-md ${
+                    darkMode
+                      ? "bg-zinc-800 border-zinc-700"
+                      : "bg-white border-gray-300"
+                  } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
+                  min="0.1"
+                  step="0.1"
+                  placeholder="Optional"
                 />
               </div>
               <div>
@@ -552,22 +635,24 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
                   Fat (g)
                 </label>
                 <input
-                  type="number"
-                  value={quickMacro.fat}
-                  onChange={(e) =>
-                    setQuickMacro({
-                      ...quickMacro,
-                      fat: Number(e.target.value),
-                    })
-                  }
-                  className={`mt-1 py-2 px-4 block w-full rounded-md ${
-                    darkMode
-                      ? "bg-gray-700 border-gray-600"
-                      : "bg-white border-gray-300"
-                  } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
-                />
+  type="number"
+  value={quickMacro.fat || ''}
+  onChange={(e) =>
+    setQuickMacro({
+      ...quickMacro,
+      fat: e.target.value ? Number(e.target.value) : undefined,
+    })
+  }
+  className={`mt-1 py-2 px-4 block w-full rounded-md ${
+    darkMode
+      ? "bg-zinc-800 border-zinc-700"
+      : "bg-white border-gray-300"
+  } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
+  step="0.1"
+  min="0"
+  placeholder="Enter fat (g)"
+/>
               </div>
-
               <div>
                 <label
                   className={`block text-sm font-medium ${
@@ -576,21 +661,24 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
                 >
                   Carbs (g)
                 </label>
-                <input
-                  type="number"
-                  value={quickMacro.carbs}
-                  onChange={(e) =>
-                    setQuickMacro({
-                      ...quickMacro,
-                      carbs: Number(e.target.value),
-                    })
-                  }
-                  className={`mt-1 py-2 px-4 block w-full rounded-md ${
-                    darkMode
-                      ? "bg-gray-700 border-gray-600"
-                      : "bg-white border-gray-300"
-                  } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
-                />
+        <input
+  type="number"
+  value={quickMacro.carbs || ''}
+  onChange={(e) =>
+    setQuickMacro({
+      ...quickMacro,
+      carbs: e.target.value ? Number(e.target.value) : undefined,
+    })
+  }
+  className={`mt-1 py-2 px-4 block w-full rounded-md ${
+    darkMode
+      ? "bg-zinc-800 border-zinc-700"
+      : "bg-white border-gray-300"
+  } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
+  step="0.1"
+  min="0"
+  placeholder="Enter carbs (g)"
+/>
               </div>
               <div>
                 <label
@@ -600,21 +688,24 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
                 >
                   Protein (g)
                 </label>
-                <input
-                  type="number"
-                  value={quickMacro.protein}
-                  onChange={(e) =>
-                    setQuickMacro({
-                      ...quickMacro,
-                      protein: Number(e.target.value),
-                    })
-                  }
-                  className={`mt-1 py-2 px-4 block w-full rounded-md ${
-                    darkMode
-                      ? "bg-gray-700 border-gray-600"
-                      : "bg-white border-gray-300"
-                  } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
-                />
+   <input
+  type="number"
+  value={quickMacro.protein || ''}
+  onChange={(e) =>
+    setQuickMacro({
+      ...quickMacro,
+      protein: e.target.value ? Number(e.target.value) : undefined,
+    })
+  }
+  className={`mt-1 py-2 px-4 block w-full rounded-md ${
+    darkMode
+      ? "bg-zinc-800 border-zinc-700"
+      : "bg-white border-gray-300"
+  } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
+  step="0.1"
+  min="0"
+  placeholder="Enter protein (g)"
+/>
               </div>
             </div>
             <div className="mt-8 flex space-x-2">

@@ -5,12 +5,14 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
+  Edit,
 } from "lucide-react";
 import { supabase } from "../supabase";
 import { useTheme } from "../ThemeContext";
 import { useMeals } from "../MealsContext";
 import { format, addDays, subDays, startOfDay, endOfDay } from "date-fns";
 import { useToast } from "../contexts/ToastContext";
+import { useNavigate } from "react-router-dom";
 
 interface MealFood {
   id: number;
@@ -20,6 +22,7 @@ interface MealFood {
   carbs: number;
   fat: number;
   is_quick_macro: boolean;
+  serving_size?: number;
 }
 
 interface Meal {
@@ -49,6 +52,10 @@ const MealList: React.FC<MealListProps> = ({ className }) => {
   const dragStartX = useRef<number | null>(null);
   const { showToast } = useToast();
   const isClosingSwipe = useRef(false);
+  const navigate = useNavigate();
+  const containerRef = useRef<HTMLDivElement>(null);
+const [dateOpacity, setDateOpacity] = useState(1);
+
 
   useEffect(() => {
     fetchUserId();
@@ -61,6 +68,28 @@ const MealList: React.FC<MealListProps> = ({ className }) => {
   useEffect(() => {
     setLocalMeals(meals);
   }, [meals]);
+
+  useEffect(() => {
+  const handleScroll = () => {
+    if (containerRef.current) {
+      const scrollPosition = containerRef.current.scrollTop;
+      const opacity = Math.max(1 - scrollPosition / 100, 0.5);
+      setDateOpacity(opacity);
+    }
+  };
+
+  const container = containerRef.current;
+  if (container) {
+    container.addEventListener('scroll', handleScroll);
+  }
+
+  return () => {
+    if (container) {
+      container.removeEventListener('scroll', handleScroll);
+    }
+  };
+}, []);
+
 
   const fetchUserId = async () => {
     const {
@@ -98,7 +127,8 @@ const MealList: React.FC<MealListProps> = ({ className }) => {
             food_protein,
             food_carbs,
             food_fat,
-            is_quick_macro
+            is_quick_macro,
+            serving_size
           `
           )
           .eq("meal_id", mealId);
@@ -113,6 +143,7 @@ const MealList: React.FC<MealListProps> = ({ className }) => {
           carbs: mf.food_carbs || 0,
           fat: mf.food_fat || 0,
           is_quick_macro: mf.is_quick_macro,
+          serving_size: mf.serving_size,
         }));
 
         setLocalMeals((prevMeals) =>
@@ -149,32 +180,33 @@ const MealList: React.FC<MealListProps> = ({ className }) => {
     setIsDragging(true);
   };
 
-  const handleDragMove = (
-    e: React.MouseEvent | React.TouchEvent,
-    mealId: number
-  ) => {
-    if (!isDragging || dragStartX.current === null) return;
+const handleDragMove = (
+  e: React.MouseEvent | React.TouchEvent,
+  mealId: number
+) => {
+  if (!isDragging || dragStartX.current === null) return;
 
-    let currentX: number;
-    if (e.type === "mousemove") {
-      currentX = (e as React.MouseEvent).clientX;
-    } else if (e.type === "touchmove") {
-      currentX = (e as React.TouchEvent).touches[0].clientX;
-    } else {
-      return;
-    }
+  let currentX: number;
+  if (e.type === "mousemove") {
+    currentX = (e as React.MouseEvent).clientX;
+  } else if (e.type === "touchmove") {
+    currentX = (e as React.TouchEvent).touches[0].clientX;
+  } else {
+    return;
+  }
 
-    const diff = dragStartX.current - currentX;
+  const diff = dragStartX.current - currentX;
 
-    if (diff > 50) {
-      setSwipedMealId(mealId);
-    } else if (diff < -20) {
-      isClosingSwipe.current = true;
-      setSwipedMealId(null);
-    } else {
-      isClosingSwipe.current = false;
-    }
-  };
+  if (diff > 50) {
+    setSwipedMealId(mealId);
+  } else if (diff < -20) {
+    isClosingSwipe.current = true;
+    setSwipedMealId(null);
+  } else {
+    isClosingSwipe.current = false;
+  }
+};
+
 
   const handleDragEnd = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
@@ -182,7 +214,7 @@ const MealList: React.FC<MealListProps> = ({ className }) => {
     dragStartX.current = null;
     setTimeout(() => {
       isClosingSwipe.current = false;
-    }, 300); // Adjust this timeout to match your transition duration
+    }, 300);
   };
 
   const handleDeleteMeal = async (mealId: number) => {
@@ -196,9 +228,21 @@ const MealList: React.FC<MealListProps> = ({ className }) => {
     }
   };
 
+const handleEditMeal = (meal: Meal) => {
+  // First fetch the meal foods
+  const mealWithFoods = meals.find(m => m.id === meal.id);
+  navigate('/add-meal', {
+    state: { 
+      meal: {
+        ...meal,
+        foods: mealWithFoods?.foods
+      }
+    }
+  });
+};
+
+
   const handleMealClick = (e: React.MouseEvent, mealId: number) => {
-    // Check if the click is not on the expand/collapse button or delete button
-    // and the meal is not currently swiped
     if (
       !(e.target as HTMLElement).closest(".meal-action-button") &&
       swipedMealId !== mealId &&
@@ -227,51 +271,32 @@ const MealList: React.FC<MealListProps> = ({ className }) => {
     return <div className="text-red-500">{error}</div>;
   }
 
-  return (
-    <div className={className}>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold">Meal List</h2>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={goToPreviousDay}
-            className={`p-1 rounded-full ${
-              darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"
-            }`}
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-          <span className="text-lg font-medium">
-            {format(selectedDate, "MMMM d, yyyy")}
-          </span>
-          <button
-            onClick={goToNextDay}
-            className={`p-1 rounded-full ${
-              darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"
-            }`}
-          >
-            <ChevronRight className="h-6 w-6" />
-          </button>
-        </div>
-      </div>
+return (
+  <div className={className}>
+    <h2 className="text-2xl font-semibold mb-6">Meal List</h2>
+    <div 
+      ref={containerRef}
+      className="h-[calc(100vh-16rem)] overflow-y-auto overflow-x-hidden pb-16"
+    >
       {localMeals.length === 0 ? (
         <p>No meals found for this day. Add some meals to see them here.</p>
       ) : (
-        <div className={`overflow-hidden`}>
+        <div className="overflow-hidden">
           <ul className="space-y-4">
             {localMeals.map((meal) => (
               <li
                 key={meal.id}
                 className={`shadow px-6 py-4 rounded-lg ${
-                  darkMode ? "bg-gray-800" : "bg-white"
+                  darkMode ? "bg-zinc-900" : "bg-white"
                 } ${
-                  darkMode ? "hover:bg-gray-700" : "hover:bg-gray-50"
+                  darkMode ? "hover:bg-zinc-800" : "hover:bg-gray-50"
                 } relative transition-all duration-200 ease-in-out cursor-pointer ${
                   swipedMealId === meal.id && "rounded-r-none"
                 }`}
                 style={{
                   transform:
                     swipedMealId === meal.id
-                      ? "translateX(-60px)"
+                      ? "translateX(-120px)"
                       : "translateX(0)",
                 }}
                 onClick={(e) => handleMealClick(e, meal.id)}
@@ -300,7 +325,7 @@ const MealList: React.FC<MealListProps> = ({ className }) => {
                         }
                       }}
                       className={`meal-action-button mr-2 p-1 rounded-full ${
-                        darkMode ? "hover:bg-gray-600" : "hover:bg-gray-200"
+                        darkMode ? "hover:bg-zinc-700" : "hover:bg-gray-200"
                       }`}
                     >
                       {expandedMeals.includes(meal.id) ? (
@@ -410,10 +435,15 @@ const MealList: React.FC<MealListProps> = ({ className }) => {
                             darkMode ? "text-gray-400" : "text-gray-600"
                           }`}
                         >
-                          {food.name} (x{food.quantity}) - Protein:{" "}
-                          {Math.round(food.protein * food.quantity)}g, Carbs:{" "}
-                          {Math.round(food.carbs * food.quantity)}g, Fat:{" "}
-                          {Math.round(food.fat * food.quantity)}g
+                          {food.name} (x{food.quantity}) - 
+                          {food.serving_size && (
+                            <span>
+                              {food.quantity * food.serving_size}g total - 
+                            </span>
+                          )}
+                          Protein: {Math.round(food.protein * food.quantity)}g, 
+                          Carbs: {Math.round(food.carbs * food.quantity)}g, 
+                          Fat: {Math.round(food.fat * food.quantity)}g
                           {food.is_quick_macro && (
                             <span className="ml-2 text-xs italic">
                               (Quick Macro)
@@ -424,30 +454,71 @@ const MealList: React.FC<MealListProps> = ({ className }) => {
                     </ul>
                   </div>
                 )}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteMeal(meal.id);
-                  }}
-                  className={`meal-action-button absolute -right-[60px] top-0 bottom-0 w-16 flex items-center justify-center transition-200 transition-all rounded-r-lg ${
-                    darkMode ? "bg-red-600" : "bg-red-500"
-                  }`}
+                <div className="absolute -right-[120px] top-0 bottom-0 flex translate-x-full transition-transform duration-200 ease-in-out"
                   style={{
-                    transform:
-                      swipedMealId === meal.id
-                        ? "translateX(0)"
-                        : "translateX(100%)",
+                    transform: swipedMealId === meal.id ? 'translateX(0)' : 'translateX(100%)',
                   }}
                 >
-                  <Trash2 className="h-5 w-5 text-white" />
-                </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditMeal(meal);
+                    }}
+                    className={`meal-action-button w-16 flex items-center justify-center ${
+                      darkMode ? "bg-blue-600" : "bg-blue-500"
+                    }`}
+                  >
+                    <Edit className="h-5 w-5 text-white" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteMeal(meal.id);
+                    }}
+                    className={`meal-action-button w-16 flex items-center justify-center rounded-r-lg ${
+                      darkMode ? "bg-red-600" : "bg-red-500"
+                    }`}
+                  >
+                    <Trash2 className="h-5 w-5 text-white" />
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
         </div>
       )}
     </div>
-  );
+    <div 
+      className="fixed bottom-24 left-0 right-0 transition-opacity duration-200"
+      style={{ opacity: dateOpacity }}
+    >
+      <div className={`mx-auto w-full px-4 py-2 border-b ${
+        darkMode ? "bg-zinc-900/90 border-zinc-800" : "bg-white/90"
+      } backdrop-blur-sm shadow-lg flex items-center justify-between`}>
+        <button
+          onClick={goToPreviousDay}
+          className={`p-1 rounded-full ${
+            darkMode ? "hover:bg-zinc-700" : "hover:bg-gray-200"
+          }`}
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+        <span className="text-lg font-medium">
+          {format(selectedDate, "MMMM d, yyyy")}
+        </span>
+        <button
+          onClick={goToNextDay}
+          className={`p-1 rounded-full ${
+            darkMode ? "hover:bg-zinc-700" : "hover:bg-gray-200"
+          }`}
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 };
 
 export default MealList;

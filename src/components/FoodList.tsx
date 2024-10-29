@@ -15,6 +15,7 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
     protein: "",
     carbs: "",
     fat: "",
+    quantity: "",
   });
   const [error, setError] = useState<string | null>(null);
   const { darkMode } = useTheme();
@@ -34,14 +35,20 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
+      const quantity = parseFloat(newFood.quantity);
+      const protein = parseFloat(newFood.protein);
+      const carbs = parseFloat(newFood.carbs);
+      const fat = parseFloat(newFood.fat);
+
       const { data, error } = await supabase
         .from("foods")
         .insert([
           {
             name: newFood.name,
-            protein: Math.round(parseFloat(newFood.protein)),
-            carbs: Math.round(parseFloat(newFood.carbs)),
-            fat: Math.round(parseFloat(newFood.fat)),
+            protein: Math.round(protein * 10) / 10,
+            carbs: Math.round(carbs * 10) / 10,
+            fat: Math.round(fat * 10) / 10,
+            serving_size: quantity || null,
             user_id: user.id,
           },
         ])
@@ -49,7 +56,7 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
 
       if (error) throw error;
       await fetchFoods();
-      setNewFood({ name: "", protein: "", carbs: "", fat: "" });
+      setNewFood({ name: "", protein: "", carbs: "", fat: "", quantity: "" });
       showToast("Food added successfully!", "success");
     } catch (error) {
       console.error("Error adding food:", error);
@@ -121,6 +128,32 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
         </div>
         <div>
           <label
+            htmlFor="quantity"
+            className={`block text-sm font-medium ${
+              darkMode ? "text-gray-200" : "text-gray-700"
+            }`}
+          >
+            Serving Size (g)
+          </label>
+          <input
+            type="number"
+            id="quantity"
+            value={newFood.quantity}
+            onChange={(e) =>
+              setNewFood({ ...newFood, quantity: e.target.value })
+            }
+            className={`mt-1 block w-full rounded-md ${inputLayoutClasses} ${
+              darkMode
+                ? "bg-gray-700 border-gray-600"
+                : "bg-white border-gray-300"
+            } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
+            min="0.1"
+            step="0.1"
+            placeholder="Optional"
+          />
+        </div>
+        <div>
+          <label
             htmlFor="fat"
             className={`block text-sm font-medium ${
               darkMode ? "text-gray-200" : "text-gray-700"
@@ -139,9 +172,10 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
                 : "bg-white border-gray-300"
             } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
             required
+            min="0"
+            step="0.1"
           />
         </div>
-
         <div>
           <label
             htmlFor="carbs"
@@ -162,6 +196,8 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
                 : "bg-white border-gray-300"
             } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
             required
+            min="0"
+            step="0.1"
           />
         </div>
         <div>
@@ -186,6 +222,8 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
                 : "bg-white border-gray-300"
             } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
             required
+            min="0"
+            step="0.1"
           />
         </div>
 
@@ -208,7 +246,7 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
             key={food.id}
             className={`flex justify-between items-center p-3 rounded-lg border ${
               darkMode
-                ? "bg-gray-700 border-gray-700"
+                ? "bg-zinc-700 border-zinc-700"
                 : "bg-gray-100  border-gray-200"
             }`}
           >
@@ -243,6 +281,11 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
                   F: {food.fat}g
                 </span>
               </div>
+              {food.serving_size && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Serving size: {food.serving_size}g
+                </div>
+              )}
             </div>
             <button
               onClick={() => openDeleteModal(food.id, food.name)}
@@ -267,7 +310,7 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div
             className={`${
-              darkMode ? "bg-gray-800" : "bg-white"
+              darkMode ? "bg-zinc-800" : "bg-white"
             } p-6 rounded-lg shadow-xl max-w-sm w-full mx-4`}
           >
             <h3 className="text-lg font-medium mb-4">Confirm Deletion</h3>
@@ -285,7 +328,7 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
                 onClick={closeDeleteModal}
                 className={`px-4 py-2 rounded ${
                   darkMode
-                    ? "bg-gray-600 hover:bg-gray-700"
+                    ? "bg-zinc-600 hover:bg-zinc-700"
                     : "bg-gray-200 hover:bg-gray-300"
                 }`}
               >

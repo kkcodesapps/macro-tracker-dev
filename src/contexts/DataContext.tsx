@@ -35,7 +35,7 @@ interface DataContextType {
   dailyTotals: Record<string, DailyTotals>;
   fetchUserSettings: () => Promise<void>;
   fetchFoods: () => Promise<void>;
-  getDailyTotals: (date: Date) => Promise<DailyTotals>;
+  getDailyTotals: (date: Date, forceRefresh?: boolean) => Promise<DailyTotals>;
   prefetchDailyTotals: (date: Date) => void;
   updateDailyTotalsOptimistically: (date: Date, newMeal: Partial<DailyTotals>) => void;
   updateDailyTotals: (date: Date, mealDiff: Partial<DailyTotals>) => void;
@@ -48,23 +48,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [foods, setFoods] = useState<Food[]>([]);
   const [dailyTotals, setDailyTotals] = useState<Record<string, DailyTotals>>({});
 
-const fetchUserSettings = useCallback(async () => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('No user found');
+  const fetchUserSettings = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
 
-    const { data, error } = await supabase
-      .from('user_settings')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
 
-    if (error) throw error;
-    setUserSettings(data);
-  } catch (error) {
-    console.error('Error fetching user settings:', error);
-  }
-}, []);
+      if (error) throw error;
+      setUserSettings(data);
+    } catch (error) {
+      console.error('Error fetching user settings:', error);
+    }
+  }, []);
 
   const fetchFoods = useCallback(async () => {
     try {
@@ -83,9 +83,9 @@ const fetchUserSettings = useCallback(async () => {
     }
   }, []);
 
-  const getDailyTotals = useCallback(async (date: Date): Promise<DailyTotals> => {
+  const getDailyTotals = useCallback(async (date: Date, forceRefresh: boolean = false): Promise<DailyTotals> => {
     const dateKey = date.toISOString().split('T')[0];
-    if (dailyTotals[dateKey]) {
+    if (!forceRefresh && dailyTotals[dateKey]) {
       return dailyTotals[dateKey];
     }
 

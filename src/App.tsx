@@ -50,10 +50,10 @@ function AppContent() {
   return (
     <div
       className={`min-h-screen overflow-hidden pb-[5rem] ${
-        darkMode ? "dark bg-gray-900 text-white" : "bg-gray-100 text-gray-900"
+        darkMode ? "dark bg-black text-white" : "bg-gray-100 text-gray-900"
       }`}
     >
-      <nav className={`${darkMode ? "bg-gray-800" : "bg-white"} shadow-lg`}>
+      <nav className={`${darkMode ? "bg-zinc-900" : "bg-white"} shadow-lg`}>
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -67,7 +67,7 @@ function AppContent() {
                 onClick={toggleDarkMode}
                 className={`p-2 rounded-full ${
                   darkMode
-                    ? "bg-gray-700 hover:bg-gray-600"
+                    ? "bg-zinc-800 hover:bg-zinc-700"
                     : "bg-gray-200 hover:bg-gray-300"
                 }`}
               >
@@ -91,7 +91,7 @@ function AppContent() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
-      <nav className="fixed bottom-0 pb-6 pt-2 left-0 right-0 bg-white dark:bg-gray-800 shadow-lg">
+      <nav className="fixed bottom-0 pb-6 pt-2 left-0 right-0 bg-white dark:bg-zinc-900 shadow-lg">
         <div className="container mx-auto px-6">
           <div className="flex justify-between items-center h-16">
             <Link
@@ -118,7 +118,7 @@ function AppContent() {
                 location.pathname === "/add-meal"
                   ? "bg-blue-500 text-white"
                   : darkMode
-                  ? "bg-gray-900"
+                  ? "bg-zinc-800"
                   : "bg-gray-200"
               }`}
             >

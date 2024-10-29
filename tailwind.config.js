@@ -3,7 +3,22 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   darkMode: 'class',
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        dark: {
+          bg: '#000000',
+          surface: '#1C1C1E',
+          elevated: '#2C2C2E',
+          secondary: '#3A3A3C',
+          border: '#38383A',
+          text: {
+            primary: '#FFFFFF',
+            secondary: '#8E8E93',
+            tertiary: '#636366'
+          }
+        }
+      }
+    },
   },
   plugins: [],
   safelist: [
