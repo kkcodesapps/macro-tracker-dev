@@ -120,7 +120,7 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
             onChange={(e) => setNewFood({ ...newFood, name: e.target.value })}
             className={`mt-1 block w-full rounded-md ${inputLayoutClasses} ${
               darkMode
-                ? "bg-gray-700 border-gray-600"
+                ? "bg-zinc-800 border-zinc-700"
                 : "bg-white border-gray-300"
             } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
             required
@@ -144,7 +144,7 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
             }
             className={`mt-1 block w-full rounded-md ${inputLayoutClasses} ${
               darkMode
-                ? "bg-gray-700 border-gray-600"
+                ? "bg-zinc-800 border-zinc-700"
                 : "bg-white border-gray-300"
             } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
             min="0.1"
@@ -168,7 +168,7 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
             onChange={(e) => setNewFood({ ...newFood, fat: e.target.value })}
             className={`mt-1 block w-full rounded-md ${inputLayoutClasses} ${
               darkMode
-                ? "bg-gray-700 border-gray-600"
+                ? "bg-zinc-800 border-zinc-700"
                 : "bg-white border-gray-300"
             } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
             required
@@ -192,7 +192,7 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
             onChange={(e) => setNewFood({ ...newFood, carbs: e.target.value })}
             className={`mt-1 block w-full rounded-md ${inputLayoutClasses} ${
               darkMode
-                ? "bg-gray-700 border-gray-600"
+                ? "bg-zinc-800 border-zinc-700"
                 : "bg-white border-gray-300"
             } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
             required
@@ -218,7 +218,7 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
             }
             className={`mt-1 block w-full rounded-md ${inputLayoutClasses} ${
               darkMode
-                ? "bg-gray-700 border-gray-600"
+                ? "bg-zinc-800 border-zinc-700"
                 : "bg-white border-gray-300"
             } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
             required

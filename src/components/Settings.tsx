@@ -149,7 +149,7 @@ const Settings: React.FC<SettingsProps> = ({ className }) => {
             onChange={(e) => setProteinGoal(e.target.value)}
             className={`mt-1 block w-full rounded-md ${inputLayoutClasses} ${
               darkMode
-                ? "bg-gray-700 border-gray-600"
+                ? "bg-zinc-800 border-zinc-700"
                 : "bg-white border-gray-300"
             } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
             required
@@ -171,7 +171,7 @@ const Settings: React.FC<SettingsProps> = ({ className }) => {
             onChange={(e) => setCarbGoal(e.target.value)}
             className={`mt-1 block w-full rounded-md ${inputLayoutClasses} ${
               darkMode
-                ? "bg-gray-700 border-gray-600"
+                ? "bg-zinc-800 border-zinc-700"
                 : "bg-white border-gray-300"
             } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
             required
@@ -193,7 +193,7 @@ const Settings: React.FC<SettingsProps> = ({ className }) => {
             onChange={(e) => setFatGoal(e.target.value)}
             className={`mt-1 block w-full rounded-md ${inputLayoutClasses} ${
               darkMode
-                ? "bg-gray-700 border-gray-600"
+                ? "bg-zinc-800 border-zinc-700"
                 : "bg-white border-gray-300"
             } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
             required
@@ -214,7 +214,7 @@ const Settings: React.FC<SettingsProps> = ({ className }) => {
             value={calorieGoal}
             className={`mt-1 block w-full rounded-md ${inputLayoutClasses} ${
               darkMode
-                ? "bg-gray-700 border-gray-600"
+                ? "bg-zinc-800 border-zinc-700"
                 : "bg-white border-gray-300"
             } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
             disabled
