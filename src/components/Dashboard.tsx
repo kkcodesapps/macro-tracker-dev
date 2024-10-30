@@ -28,8 +28,14 @@ const Dashboard = () => {
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { darkMode } = useTheme();
-  const { userSettings, dailyTotals, getDailyTotals, prefetchDailyTotals } =
-    useData();
+  const {
+    userSettings,
+    dailyTotals,
+    getDailyTotals,
+    prefetchDailyTotals,
+    fetchUserSettings,
+    fetchFoods,
+  } = useData();
   const { showToast } = useToast();
 
   const panelCount = 3;
@@ -176,8 +182,15 @@ const Dashboard = () => {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await getDailyTotals(selectedDate, true);
-      showToast("Data refreshed successfully", "success");
+      await Promise.all([
+        fetchUserSettings(),
+        fetchFoods(),
+        ...dates.map((date) => getDailyTotals(date, true)),
+      ]);
+
+      await prefetchDailyTotals(selectedDate);
+
+      showToast("All data refreshed successfully", "success");
     } catch (error) {
       console.error("Error refreshing data:", error);
       showToast("Failed to refresh data", "error");
