@@ -246,7 +246,7 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
             key={food.id}
             className={`flex justify-between items-center p-3 rounded-lg border ${
               darkMode
-                ? "bg-zinc-700 border-zinc-700"
+                ? "bg-zinc-900 border-zinc-900"
                 : "bg-gray-100  border-gray-200"
             }`}
           >
@@ -291,14 +291,14 @@ const FoodList: React.FC<FoodListProps> = ({ className }) => {
               onClick={() => openDeleteModal(food.id, food.name)}
               className={`p-1 rounded-full ${
                 darkMode
-                  ? "bg-red-600 hover:bg-red-700"
+                  ? "bg-red-900 hover:bg-red-700"
                   : "bg-red-100 hover:bg-red-200"
               }`}
               aria-label={`Delete ${food.name}`}
             >
               <Trash2
                 className={`h-5 w-5 ${
-                  darkMode ? "text-white" : "text-red-600"
+                  darkMode ? "text-red-400" : "text-red-600"
                 }`}
               />
             </button>

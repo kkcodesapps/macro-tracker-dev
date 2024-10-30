@@ -304,22 +304,22 @@ const Dashboard = () => {
         } shadow rounded-lg p-6 relative`}
       >
         <div className="text-left mb-8">
-          <div className="flex items-center justify-center space-x-4 mb-4">
-            <div className="text-lg font-medium relative">
-              <div className="text-sm text-gray-500">
+          <div className=" space-x-4 mb-4">
+            <div className="text-lg flex justify-center font-medium relative">
+              <div className="text-sm text-gray-500 w-fit m-auto pt-8">
                 {format(date, "MMMM d, yyyy")}
-                {isToday(date) && (
-                  <span
-                    className={`absolute -right-16 top-0 px-2 py-0.5 text-xs font-semibold rounded-full ${
-                      darkMode
-                        ? "bg-blue-900 text-blue-200"
-                        : "bg-blue-100 text-blue-800"
-                    }`}
-                  >
-                    Today
-                  </span>
-                )}
               </div>
+              {isToday(date) && (
+                <div
+                  className={`absolute -top-2 w-fit px-2 py-0.5 text-xs font-semibold rounded-full m-auto mt-2 ${
+                    darkMode
+                      ? "bg-blue-900 text-blue-200"
+                      : "bg-blue-100 text-blue-800"
+                  }`}
+                >
+                  Today
+                </div>
+              )}
             </div>
           </div>
           <div
