@@ -91,7 +91,7 @@ function AppContent() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
-      <nav className="fixed bottom-0 pb-6 pt-2 left-0 right-0 bg-white dark:bg-zinc-900 shadow-lg">
+      <nav className="fixed bottom-0 pb-6 left-0 right-0 bg-white dark:bg-zinc-900 shadow-lg">
         <div className="container mx-auto px-6">
           <div className="flex justify-between items-center h-16">
             <Link

@@ -486,7 +486,7 @@ const MealList: React.FC<MealListProps> = ({ className }) => {
         )}
       </div>
       <div
-        className="fixed bottom-24 left-0 right-0 transition-opacity duration-200"
+        className="fixed bottom-[5.5rem] left-0 right-0 transition-opacity duration-200"
         style={{ opacity: dateOpacity }}
       >
         <div
