@@ -48,13 +48,13 @@ const AddMeal: React.FC<AddMealProps> = ({ className }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [recentFoods, setRecentFoods] = useState<Food[]>([]);
   const [editingMealId, setEditingMealId] = useState<number | null>(null);
-const [quickMacro, setQuickMacro] = useState<QuickMacro>({
-  name: "",
-  protein: undefined,
-  carbs: undefined,
-  fat: undefined,
-  serving_size: undefined,
-});
+  const [quickMacro, setQuickMacro] = useState<QuickMacro>({
+    name: "",
+    protein: undefined,
+    carbs: undefined,
+    fat: undefined,
+    serving_size: undefined,
+  });
 
   const { darkMode } = useTheme();
   const { addMeal, updateMeal } = useMeals();
@@ -64,37 +64,35 @@ const [quickMacro, setQuickMacro] = useState<QuickMacro>({
   const location = useLocation();
   const navigate = useNavigate();
 
-useEffect(() => {
-  fetchFoods();
-  // Check if we're editing an existing meal
-  if (location.state?.meal) {
+  useEffect(() => {
+    fetchFoods();
+    // Check if we're editing an existing meal
+    if (location.state?.meal) {
+      const meal = location.state.meal;
+      setEditingMealId(meal.id);
+      setMealName(meal.name);
+      setMealDate(new Date(meal.created_at));
+      setProtein(meal.protein);
+      setCarbs(meal.carbs);
+      setFat(meal.fat);
+      setCalories(meal.calories);
+      console.log("testst", meal);
 
-    const meal = location.state.meal;
-    setEditingMealId(meal.id);
-    setMealName(meal.name);
-    setMealDate(new Date(meal.created_at));
-    setProtein(meal.protein);
-    setCarbs(meal.carbs);
-    setFat(meal.fat);
-    setCalories(meal.calories);
-    console.log('testst', meal);
-    
-    if (meal.foods) {
-      const transformedFoods = meal.foods.map(food => ({
-        id: food.food_id || food.id, // Handle both regular foods and quick macros
-        name: food.food_name || food.name,
-        protein: food.food_protein || food.protein,
-        carbs: food.food_carbs || food.carbs,
-        fat: food.food_fat || food.fat,
-        quantity: food.quantity,
-        serving_size: food.serving_size,
-        isQuickMacro: food.is_quick_macro
-      }));
-      setSelectedFoods(transformedFoods);
+      if (meal.foods) {
+        const transformedFoods = meal.foods.map((food) => ({
+          id: food.food_id || food.id, // Handle both regular foods and quick macros
+          name: food.food_name || food.name,
+          protein: food.food_protein || food.protein,
+          carbs: food.food_carbs || food.carbs,
+          fat: food.food_fat || food.fat,
+          quantity: food.quantity,
+          serving_size: food.serving_size,
+          isQuickMacro: food.is_quick_macro,
+        }));
+        setSelectedFoods(transformedFoods);
+      }
     }
-  }
-}, [location.state, fetchFoods]);
-
+  }, [location.state, fetchFoods]);
 
   useEffect(() => {
     calculateTotals();
@@ -171,13 +169,13 @@ useEffect(() => {
         protein: food.protein,
         carbs: food.carbs,
         fat: food.fat,
-        serving_size: food.serving_size
+        serving_size: food.serving_size,
       }));
 
       if (editingMealId) {
         await updateMeal(editingMealId, {
           ...mealData,
-          foods: foodsToAdd
+          foods: foodsToAdd,
         });
         showToast("Meal updated successfully!", "success");
       } else {
@@ -185,11 +183,11 @@ useEffect(() => {
         showToast("Meal added successfully!", "success");
       }
 
-      navigate('/meal-list');
+      navigate("/meal-list");
     } catch (error) {
       console.error("Error saving meal:", error);
       showToast(
-        `Failed to ${editingMealId ? 'update' : 'add'} meal. Please try again.`,
+        `Failed to ${editingMealId ? "update" : "add"} meal. Please try again.`,
         "error"
       );
     }
@@ -228,28 +226,28 @@ useEffect(() => {
     );
   };
 
-const addQuickMacro = () => {
-  const newQuickMacro: SelectedFood = {
-    id: Date.now(),
-    name: quickMacro.name || "Quick Macro",
-    protein: quickMacro.protein || 0,
-    carbs: quickMacro.carbs || 0,
-    fat: quickMacro.fat || 0,
-    quantity: 1,
-    serving_size: quickMacro.serving_size,
-    isQuickMacro: true,
-  };
+  const addQuickMacro = () => {
+    const newQuickMacro: SelectedFood = {
+      id: Date.now(),
+      name: quickMacro.name || "Quick Macro",
+      protein: quickMacro.protein || 0,
+      carbs: quickMacro.carbs || 0,
+      fat: quickMacro.fat || 0,
+      quantity: 1,
+      serving_size: quickMacro.serving_size,
+      isQuickMacro: true,
+    };
 
-  setSelectedFoods([...selectedFoods, newQuickMacro]);
-  setShowQuickMacroModal(false);
-  setQuickMacro({
-    name: "",
-    protein: undefined,
-    carbs: undefined,
-    fat: undefined,
-    serving_size: undefined,
-  });
-};
+    setSelectedFoods([...selectedFoods, newQuickMacro]);
+    setShowQuickMacroModal(false);
+    setQuickMacro({
+      name: "",
+      protein: undefined,
+      carbs: undefined,
+      fat: undefined,
+      serving_size: undefined,
+    });
+  };
 
   const filteredFoods = searchTerm
     ? foods.filter((food) =>
@@ -266,10 +264,12 @@ const addQuickMacro = () => {
     popper: "mt-14",
   };
 
+  const quickSelectOptions = ["Breakfast", "Lunch", "Dinner", "Snack"];
+
   return (
     <div className={`max-w-md mx-auto ${className}`}>
       <h2 className="text-2xl font-semibold mb-6">
-        {editingMealId ? 'Edit Meal' : 'Add Meal'}
+        {editingMealId ? "Edit Meal" : "Add Meal"}
       </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -293,6 +293,22 @@ const addQuickMacro = () => {
             } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
             required
           />
+          <div className="mt-4 mb-8 flex space-x-3 w-full justify-center">
+            {quickSelectOptions.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setMealName(option)}
+                className={`py-1 px-4 border border-transparent rounded-full text-sm font-medium text-white ${
+                  darkMode
+                    ? "bg-blue-600 hover:bg-blue-700"
+                    : "bg-blue-500 hover:bg-blue-600"
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div>
@@ -515,7 +531,7 @@ const addQuickMacro = () => {
               : "bg-green-500 hover:bg-green-600"
           } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500`}
         >
-          {editingMealId ? 'Update Meal' : 'Add Meal'}
+          {editingMealId ? "Update Meal" : "Add Meal"}
         </button>
       </form>
 
@@ -609,11 +625,13 @@ const addQuickMacro = () => {
                 </label>
                 <input
                   type="number"
-                  value={quickMacro.serving_size || ''}
+                  value={quickMacro.serving_size || ""}
                   onChange={(e) =>
                     setQuickMacro({
                       ...quickMacro,
-                      serving_size: e.target.value ? Number(e.target.value) : undefined,
+                      serving_size: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
                     })
                   }
                   className={`mt-1 py-2 px-4 block w-full rounded-md ${
@@ -635,23 +653,23 @@ const addQuickMacro = () => {
                   Fat (g)
                 </label>
                 <input
-  type="number"
-  value={quickMacro.fat || ''}
-  onChange={(e) =>
-    setQuickMacro({
-      ...quickMacro,
-      fat: e.target.value ? Number(e.target.value) : undefined,
-    })
-  }
-  className={`mt-1 py-2 px-4 block w-full rounded-md ${
-    darkMode
-      ? "bg-zinc-800 border-zinc-700"
-      : "bg-white border-gray-300"
-  } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
-  step="0.1"
-  min="0"
-  placeholder="Enter fat (g)"
-/>
+                  type="number"
+                  value={quickMacro.fat || ""}
+                  onChange={(e) =>
+                    setQuickMacro({
+                      ...quickMacro,
+                      fat: e.target.value ? Number(e.target.value) : undefined,
+                    })
+                  }
+                  className={`mt-1 py-2 px-4 block w-full rounded-md ${
+                    darkMode
+                      ? "bg-zinc-800 border-zinc-700"
+                      : "bg-white border-gray-300"
+                  } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
+                  step="0.1"
+                  min="0"
+                  placeholder="Enter fat (g)"
+                />
               </div>
               <div>
                 <label
@@ -661,24 +679,26 @@ const addQuickMacro = () => {
                 >
                   Carbs (g)
                 </label>
-        <input
-  type="number"
-  value={quickMacro.carbs || ''}
-  onChange={(e) =>
-    setQuickMacro({
-      ...quickMacro,
-      carbs: e.target.value ? Number(e.target.value) : undefined,
-    })
-  }
-  className={`mt-1 py-2 px-4 block w-full rounded-md ${
-    darkMode
-      ? "bg-zinc-800 border-zinc-700"
-      : "bg-white border-gray-300"
-  } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
-  step="0.1"
-  min="0"
-  placeholder="Enter carbs (g)"
-/>
+                <input
+                  type="number"
+                  value={quickMacro.carbs || ""}
+                  onChange={(e) =>
+                    setQuickMacro({
+                      ...quickMacro,
+                      carbs: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
+                    })
+                  }
+                  className={`mt-1 py-2 px-4 block w-full rounded-md ${
+                    darkMode
+                      ? "bg-zinc-800 border-zinc-700"
+                      : "bg-white border-gray-300"
+                  } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
+                  step="0.1"
+                  min="0"
+                  placeholder="Enter carbs (g)"
+                />
               </div>
               <div>
                 <label
@@ -688,24 +708,26 @@ const addQuickMacro = () => {
                 >
                   Protein (g)
                 </label>
-   <input
-  type="number"
-  value={quickMacro.protein || ''}
-  onChange={(e) =>
-    setQuickMacro({
-      ...quickMacro,
-      protein: e.target.value ? Number(e.target.value) : undefined,
-    })
-  }
-  className={`mt-1 py-2 px-4 block w-full rounded-md ${
-    darkMode
-      ? "bg-zinc-800 border-zinc-700"
-      : "bg-white border-gray-300"
-  } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
-  step="0.1"
-  min="0"
-  placeholder="Enter protein (g)"
-/>
+                <input
+                  type="number"
+                  value={quickMacro.protein || ""}
+                  onChange={(e) =>
+                    setQuickMacro({
+                      ...quickMacro,
+                      protein: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
+                    })
+                  }
+                  className={`mt-1 py-2 px-4 block w-full rounded-md ${
+                    darkMode
+                      ? "bg-zinc-800 border-zinc-700"
+                      : "bg-white border-gray-300"
+                  } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
+                  step="0.1"
+                  min="0"
+                  placeholder="Enter protein (g)"
+                />
               </div>
             </div>
             <div className="mt-8 flex space-x-2">
