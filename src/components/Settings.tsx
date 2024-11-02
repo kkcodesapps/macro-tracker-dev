@@ -3,6 +3,8 @@ import { useTheme } from "../ThemeContext";
 import { supabase } from "../supabase";
 import { useData } from "../contexts/DataContext";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { LogOut, Save, PlayCircle, Package } from "lucide-react";
 import packageInfo from "../../package.json";
 
 interface SettingsProps {
@@ -39,20 +41,14 @@ const Settings: React.FC<SettingsProps> = ({ className }) => {
   }, [proteinGoal, carbGoal, fatGoal]);
 
   const fetchUserEmail = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user && user.email) {
-      setUserEmail(user.email);
-    }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.email) setUserEmail(user.email);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
       const newSettings = {
@@ -63,7 +59,7 @@ const Settings: React.FC<SettingsProps> = ({ className }) => {
         fat_goal: parseInt(fatGoal),
       };
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("user_settings")
         .upsert(newSettings, { onConflict: "user_id" })
         .select();
@@ -78,20 +74,16 @@ const Settings: React.FC<SettingsProps> = ({ className }) => {
     }
   };
 
-  const handleStartClick = () => {
-    setShowConfirmation(true);
-  };
+  const handleStartClick = () => setShowConfirmation(true);
 
   const handleConfirmStart = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
       const startDate = new Date().toISOString();
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("user_settings")
         .upsert(
           {
@@ -127,195 +119,196 @@ const Settings: React.FC<SettingsProps> = ({ className }) => {
     }
   };
 
-  const inputLayoutClasses = "py-2 px-4";
-
   return (
     <div className={`max-w-md mx-auto ${className}`}>
-      <h2 className="text-2xl font-semibold mb-6">Settings</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label
-            htmlFor="proteinGoal"
-            className={`block text-sm font-medium ${
-              darkMode ? "text-gray-200" : "text-gray-700"
-            }`}
-          >
-            Daily Protein Goal (g)
-          </label>
-          <input
-            type="number"
-            id="proteinGoal"
-            value={proteinGoal}
-            onChange={(e) => setProteinGoal(e.target.value)}
-            className={`mt-1 block w-full rounded-md ${inputLayoutClasses} ${
-              darkMode
-                ? "bg-zinc-800 border-zinc-700"
-                : "bg-white border-gray-300"
-            } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
-            required
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="carbGoal"
-            className={`block text-sm font-medium ${
-              darkMode ? "text-gray-200" : "text-gray-700"
-            }`}
-          >
-            Daily Carb Goal (g)
-          </label>
-          <input
-            type="number"
-            id="carbGoal"
-            value={carbGoal}
-            onChange={(e) => setCarbGoal(e.target.value)}
-            className={`mt-1 block w-full rounded-md ${inputLayoutClasses} ${
-              darkMode
-                ? "bg-zinc-800 border-zinc-700"
-                : "bg-white border-gray-300"
-            } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
-            required
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="fatGoal"
-            className={`block text-sm font-medium ${
-              darkMode ? "text-gray-200" : "text-gray-700"
-            }`}
-          >
-            Daily Fat Goal (g)
-          </label>
-          <input
-            type="number"
-            id="fatGoal"
-            value={fatGoal}
-            onChange={(e) => setFatGoal(e.target.value)}
-            className={`mt-1 block w-full rounded-md ${inputLayoutClasses} ${
-              darkMode
-                ? "bg-zinc-800 border-zinc-700"
-                : "bg-white border-gray-300"
-            } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
-            required
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="calorieGoal"
-            className={`block text-sm font-medium ${
-              darkMode ? "text-gray-200" : "text-gray-700"
-            }`}
-          >
-            Daily Calorie Goal
-          </label>
-          <input
-            type="number"
-            id="calorieGoal"
-            value={calorieGoal}
-            className={`mt-1 block w-full rounded-md ${inputLayoutClasses} ${
-              darkMode
-                ? "bg-zinc-800 border-zinc-700"
-                : "bg-white border-gray-300"
-            } shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}
-            disabled
-          />
-        </div>
-        <button
-          type="submit"
-          className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-            darkMode
-              ? "bg-blue-600 hover:bg-blue-700"
-              : "bg-blue-500 hover:bg-blue-600"
-          } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
-        >
-          Save Settings
-        </button>
-      </form>
+      <motion.h2
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-2xl font-semibold mb-6"
+      >
+        Settings
+      </motion.h2>
 
-      <div className="mt-8">
-        <button
-          onClick={handleStartClick}
-          className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-            darkMode
-              ? "bg-green-600 hover:bg-green-700"
-              : "bg-green-500 hover:bg-green-600"
-          } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500`}
-        >
-          Start Bulk/Cut Tracking
-        </button>
-      </div>
-
-      {showConfirmation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div
-            className={`${
-              darkMode ? "bg-gray-800" : "bg-white"
-            } p-6 rounded-lg shadow-xl`}
-          >
-            <h3 className="text-lg font-medium mb-4">Confirm Start</h3>
-            <p className="mb-4">
-              Are you sure you want to start tracking? Today will be set as Day
-              1.
-            </p>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={() => setShowConfirmation(false)}
-                className={`px-4 py-2 rounded ${
-                  darkMode
-                    ? "bg-gray-600 hover:bg-gray-700"
-                    : "bg-gray-200 hover:bg-gray-300"
-                }`}
+      <motion.form
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        onSubmit={handleSubmit}
+        className="space-y-6"
+      >
+        <div className={`p-6 rounded-2xl backdrop-blur-lg border ${
+          darkMode ? "bg-zinc-900/80 border-zinc-800" : "bg-white/80 border-gray-200"
+        }`}>
+          <h3 className="text-lg font-medium mb-4">Macro Goals</h3>
+          <div className="space-y-4">
+            {[
+              { label: "Daily Protein Goal (g)", value: proteinGoal, setter: setProteinGoal },
+              { label: "Daily Carb Goal (g)", value: carbGoal, setter: setCarbGoal },
+              { label: "Daily Fat Goal (g)", value: fatGoal, setter: setFatGoal },
+              { label: "Daily Calorie Goal", value: calorieGoal, disabled: true },
+            ].map((field, index) => (
+              <motion.div
+                key={field.label}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmStart}
-                className={`px-4 py-2 rounded text-white ${
-                  darkMode
-                    ? "bg-green-600 hover:bg-green-700"
-                    : "bg-green-500 hover:bg-green-600"
-                }`}
-              >
-                Confirm
-              </button>
-            </div>
+                <label className={`block text-sm font-medium ${
+                  darkMode ? "text-gray-200" : "text-gray-700"
+                }`}>
+                  {field.label}
+                </label>
+                <input
+                  type="number"
+                  value={field.value}
+                  onChange={field.setter ? (e) => field.setter(e.target.value) : undefined}
+                  disabled={field.disabled}
+                  className={`mt-1 px-4 py-3 block w-full rounded-xl transition-all duration-200 ${
+                    darkMode
+                      ? "bg-zinc-800 border-zinc-700 focus:bg-zinc-700"
+                      : "bg-gray-50 border-gray-200 focus:bg-white"
+                  } border shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20`}
+                  required
+                />
+              </motion.div>
+            ))}
           </div>
-        </div>
-      )}
 
-      <div className="mt-8 p-4 border rounded-md">
-        <h3
-          className={`text-lg font-medium mb-2 ${
-            darkMode ? "text-gray-200" : "text-gray-700"
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="submit"
+            className={`mt-6 w-full flex items-center justify-center py-3 px-4 rounded-xl text-white transition-all duration-200 ${
+              darkMode
+                ? "bg-blue-600 hover:bg-blue-500"
+                : "bg-blue-500 hover:bg-blue-600"
+            } shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40`}
+          >
+            <Save className="w-5 h-5 mr-2" />
+            Save Settings
+          </motion.button>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className={`p-6 rounded-2xl backdrop-blur-lg border ${
+            darkMode ? "bg-zinc-900/80 border-zinc-800" : "bg-white/80 border-gray-200"
           }`}
         >
-          User Information
-        </h3>
-        <p
-          className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}
-        >
-          Email: {userEmail}
-        </p>
-      </div>
+          <h3 className="text-lg font-medium mb-4">Bulk/Cut Tracking</h3>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleStartClick}
+            className={`w-full flex items-center justify-center py-3 px-4 rounded-xl text-white transition-all duration-200 ${
+              darkMode
+                ? "bg-green-600 hover:bg-green-500"
+                : "bg-green-500 hover:bg-green-600"
+            } shadow-lg shadow-green-500/20 hover:shadow-green-500/40`}
+          >
+            <PlayCircle className="w-5 h-5 mr-2" />
+            Start Bulk/Cut Tracking
+          </motion.button>
+        </motion.div>
 
-      <div className="mt-4">
-        <button
-          onClick={handleSignOut}
-          className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-            darkMode
-              ? "bg-red-600 hover:bg-red-700"
-              : "bg-red-500 hover:bg-red-600"
-          } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500`}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className={`p-6 rounded-2xl backdrop-blur-lg border ${
+            darkMode ? "bg-zinc-900/80 border-zinc-800" : "bg-white/80 border-gray-200"
+          }`}
         >
-          Sign Out
-        </button>
-      </div>
+          <h3 className="text-lg font-medium mb-4">Account</h3>
+          <div className={`p-4 rounded-xl ${
+            darkMode ? "bg-zinc-800" : "bg-gray-50"
+          } mb-6`}>
+            <p className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+              Email: {userEmail}
+            </p>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleSignOut}
+            className={`w-full flex items-center justify-center py-3 px-4 rounded-xl text-white transition-all duration-200 ${
+              darkMode
+                ? "bg-red-600 hover:bg-red-500"
+                : "bg-red-500 hover:bg-red-600"
+            } shadow-lg shadow-red-500/20 hover:shadow-red-500/40`}
+          >
+            <LogOut className="w-5 h-5 mr-2" />
+            Sign Out
+          </motion.button>
+        </motion.div>
 
-      <div className="w-full text-center mt-8">
-        <span className="font-normal text-sm ml-2 text-gray-500">
-          version {packageInfo.version}
-        </span>
-      </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="w-full text-center"
+        >
+          <span className="flex items-center justify-center text-sm text-gray-500">
+            <Package className="w-4 h-4 mr-2" />
+            version {packageInfo.version}
+          </span>
+        </motion.div>
+      </motion.form>
+
+      <AnimatePresence>
+        {showConfirmation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className={`${
+                darkMode ? "bg-zinc-900" : "bg-white"
+              } p-6 rounded-2xl shadow-xl max-w-sm w-full border ${
+                darkMode ? "border-zinc-800" : "border-gray-200"
+              }`}
+            >
+              <h3 className="text-lg font-medium mb-4">Confirm Start</h3>
+              <p className="mb-6 text-sm text-gray-500">
+                Are you sure you want to start tracking? Today will be set as Day 1.
+              </p>
+              <div className="flex justify-end space-x-4">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowConfirmation(false)}
+                  className={`px-4 py-2 rounded-xl transition-all duration-200 ${
+                    darkMode
+                      ? "bg-zinc-800 hover:bg-zinc-700"
+                      : "bg-gray-100 hover:bg-gray-200"
+                  }`}
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleConfirmStart}
+                  className={`px-4 py-2 rounded-xl text-white transition-all duration-200 ${
+                    darkMode
+                      ? "bg-green-600 hover:bg-green-500"
+                      : "bg-green-500 hover:bg-green-600"
+                  }`}
+                >
+                  Confirm
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

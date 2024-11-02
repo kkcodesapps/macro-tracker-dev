@@ -18,6 +18,7 @@ import {
 } from "date-fns";
 import { useData } from "../contexts/DataContext";
 import { useToast } from "../contexts/ToastContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 const Dashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -83,8 +84,32 @@ const Dashboard = () => {
   }, [dates, fetchDailyTotals, prefetchDailyTotals, dailyTotals, selectedDate]);
 
   useEffect(() => {
-    localStorage.setItem("showRemaining", JSON.stringify(showRemaining));
-  }, [showRemaining]);
+    const container = containerRef.current;
+    if (!container) return;
+
+    const preventVerticalScroll = (e) => {
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+    };
+
+    container.addEventListener("touchstart", handleTouchStart, {
+      passive: false,
+    });
+    container.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("touchmove", preventVerticalScroll, {
+      passive: false,
+    });
+
+    return () => {
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener("touchmove", preventVerticalScroll);
+      document.body.style.overflow = "auto";
+    };
+  }, [currentIndex]);
 
   const updateDates = (direction) => {
     setDates((prevDates) => {
@@ -103,7 +128,8 @@ const Dashboard = () => {
     if (isTransitioning) return;
 
     setIsTransitioning(true);
-    containerRef.current.style.transition = "transform 0.2s ease-in-out";
+    containerRef.current.style.transition =
+      "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
 
     if (direction === "next") {
       setCurrentIndex((prevIndex) => prevIndex + 1);
@@ -120,7 +146,7 @@ const Dashboard = () => {
     setTimeout(() => {
       setIsTransitioning(false);
       repositionIfNeeded(direction);
-    }, 200);
+    }, 300);
   };
 
   const repositionIfNeeded = (direction) => {
@@ -148,33 +174,6 @@ const Dashboard = () => {
     }
   };
 
-  useEffect(() => {
-    const container = containerRef.current;
-    container.addEventListener("touchstart", handleTouchStart, {
-      passive: false,
-    });
-    container.addEventListener("touchend", handleTouchEnd, { passive: true });
-
-    const preventVerticalScroll = (e) => {
-      if (e.cancelable) {
-        e.preventDefault();
-      }
-    };
-    document.body.style.overflow = "hidden";
-    window.addEventListener("touchmove", preventVerticalScroll, {
-      passive: false,
-    });
-
-    return () => {
-      container.removeEventListener("touchstart", handleTouchStart);
-      container.removeEventListener("touchend", handleTouchEnd, {
-        passive: true,
-      });
-      window.removeEventListener("touchmove", preventVerticalScroll);
-      document.body.style.overflow = "auto";
-    };
-  }, [currentIndex]);
-
   const toggleRemainingMacros = () => {
     setShowRemaining((prev) => !prev);
   };
@@ -189,7 +188,6 @@ const Dashboard = () => {
       ]);
 
       await prefetchDailyTotals(selectedDate);
-
       showToast("All data refreshed successfully", "success");
     } catch (error) {
       console.error("Error refreshing data:", error);
@@ -251,8 +249,13 @@ const Dashboard = () => {
     ];
 
     return (
-      <div className="space-y-4">
-        {macros.map((macro) => {
+      <motion.div
+        className="space-y-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        {macros.map((macro, index) => {
           const percentage = Math.min((macro.current / macro.goal) * 100, 100);
           const remaining = macro.goal - macro.current;
           const displayValue = showRemaining
@@ -262,76 +265,99 @@ const Dashboard = () => {
             : `${macro.current} / ${macro.goal}`;
 
           return (
-            <div key={macro.name} className="relative pt-1">
-              <div className="flex mb-2 items-center justify-between">
-                <div>
+            <motion.div
+              key={macro.name}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+              className="relative"
+            >
+              <div className="flex mb-3 items-center justify-between">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
                   <span
-                    className={`text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full ${
+                    className={`text-sm font-medium inline-block py-1.5 px-3 rounded-full transition-all duration-200 ${
                       darkMode
-                        ? `text-${macro.color}-200 bg-${macro.color}-900`
-                        : `text-${macro.color}-600 bg-${macro.color}-200`
+                        ? `text-${macro.color}-200 bg-${macro.color}-900/50`
+                        : `text-${macro.color}-700 bg-${macro.color}-100 border border-${macro.color}-200`
                     }`}
                   >
                     {macro.name}
                   </span>
-                </div>
+                </motion.div>
                 <div
                   className={`text-right ${
                     showRemaining && remaining < 0 ? "text-red-500" : ""
                   }`}
                 >
-                  <span className="text-sm font-normal inline-block">
+                  <span className="text-sm font-medium">
                     {displayValue}
                     {macro.name !== "Calories" ? "g" : ""}
                   </span>
                 </div>
               </div>
               <div
-                className={`overflow-hidden h-2 mb-4 text-xs flex rounded ${
-                  darkMode ? "bg-gray-700" : "bg-gray-200"
+                className={`overflow-hidden h-2.5 text-xs flex rounded-full transition-all duration-300 ${
+                  darkMode ? "bg-gray-800" : "bg-gray-200"
                 }`}
               >
-                <div
-                  style={{
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{
                     width: `${showRemaining ? 100 - percentage : percentage}%`,
                   }}
-                  className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-${macro.color}-500`}
-                ></div>
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-${macro.color}-500 transition-all duration-300`}
+                />
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
     );
   };
 
   const renderPanel = (date: Date, index: number) => (
     <div
       key={index}
-      className={`flex-shrink-0 transition-transform duration-200 ease-out p-4`}
+      className={`flex-shrink-0 transition-transform duration-300 ease-out p-4`}
       style={{ width: `${panelWidthPercentage}%` }}
     >
-      <div
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
         className={`${
-          darkMode ? "bg-zinc-800" : "bg-white"
-        } shadow rounded-lg p-6 relative`}
+          darkMode ? "bg-zinc-900/80" : "bg-white/80"
+        } backdrop-blur-lg rounded-2xl p-6 relative border ${
+          darkMode ? "border-zinc-800" : "border-gray-200"
+        }`}
       >
         <div className="text-left mb-8">
-          <div className=" space-x-4 mb-4">
+          <div className="space-x-4 mb-4">
             <div className="text-lg flex justify-center font-medium relative">
-              <div className="text-sm text-gray-500 w-fit m-auto pt-8">
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+                className="text-sm text-gray-500 w-fit m-auto pt-8"
+              >
                 {format(date, "MMMM d, yyyy")}
-              </div>
+              </motion.div>
               {isToday(date) && (
-                <div
-                  className={`absolute -top-2 w-fit px-2 py-0.5 text-xs font-semibold rounded-full m-auto mt-2 ${
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className={`absolute -top-2 w-fit px-3 py-1 text-xs font-semibold rounded-full m-auto mt-2 ${
                     darkMode
-                      ? "bg-blue-900 text-blue-200"
-                      : "bg-blue-100 text-blue-800"
+                      ? "bg-blue-900/50 text-blue-200 border border-blue-700"
+                      : "bg-blue-100 text-blue-800 border border-blue-200"
                   }`}
                 >
                   Today
-                </div>
+                </motion.div>
               )}
             </div>
           </div>
@@ -341,58 +367,80 @@ const Dashboard = () => {
             }`}
           >
             {bulkCutDay !== null && bulkCutDay >= 1 && bulkCutDay !== 0 && (
-              <div className={`text-lg ${bulkCutDay === 0 && "hidden"}`}>
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className={`text-lg font-medium ${
+                  bulkCutDay === 0 && "hidden"
+                }`}
+              >
                 Day {bulkCutDay + differenceInDays(date, selectedDate)}
-              </div>
+              </motion.div>
             )}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={toggleRemainingMacros}
-              className={`flex items-center p-2 text-sm rounded-full ${
+              className={`flex items-center p-2.5 text-sm rounded-full transition-all duration-200 ${
                 darkMode
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "bg-blue-100 hover:bg-blue-200"
-              } text-blue-900`}
+                  ? "bg-blue-900/50 text-blue-200 border border-blue-700 hover:bg-blue-800"
+                  : "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200"
+              }`}
             >
               <RefreshCw className="h-4 w-4" />
-            </button>
+            </motion.button>
           </div>
         </div>
         {isLoading && !dailyTotals[date.toISOString().split("T")[0]] ? (
           <div className="flex justify-center items-center h-40">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="rounded-full h-12 w-12 border-2 border-blue-500 border-t-transparent"
+            />
           </div>
         ) : (
           renderProgressBars(date)
         )}
-      </div>
+      </motion.div>
     </div>
   );
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center px-4">
-        <h2 className="text-2xl font-semibold">Dashboard</h2>
-        <button
+        <motion.h2
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="text-2xl font-semibold"
+        >
+          Dashboard
+        </motion.h2>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleRefresh}
-          className={`flex items-center p-2 rounded ${
-            darkMode
-              ? "bg-blue-600 hover:bg-blue-700"
-              : "bg-blue-100 hover:bg-blue-200"
-          } text-blue-900 transition-colors duration-200`}
           disabled={isRefreshing}
+          className={`flex items-center p-3 rounded-xl transition-all duration-200 ${
+            darkMode
+              ? "bg-blue-900/50 text-blue-200 border border-blue-700 hover:bg-blue-800"
+              : "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200"
+          }`}
         >
           <RotateCw
             className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`}
           />
-          <span className="ml-2">
+          <span className="ml-2 font-medium">
             {isRefreshing ? "Refreshing..." : "Refresh"}
           </span>
-        </button>
+        </motion.button>
       </div>
-      <div className="overflow-hidden rounded-lg">
+      <div className="overflow-hidden rounded-2xl">
         <div
           ref={containerRef}
-          className="flex transition-transform duration-200 ease-out"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          className="flex transition-transform duration-300 ease-out"
           style={{
             transform: `translateX(-${panelWidthPercentage}%)`,
             width: `${panelWidthPercentage}%`,
@@ -400,18 +448,6 @@ const Dashboard = () => {
         >
           {dates.map((date, index) => renderPanel(date, index))}
         </div>
-        <button
-          className="absolute left-4 -bottom-10 transform -translate-y-1/2 bg-white bg-opacity-50 hover:bg-opacity-75 text-gray-800 font-bold py-2 px-4 rounded-full shadow-lg transition-all duration-200 hidden md:block"
-          onClick={prevSlide}
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </button>
-        <button
-          className="absolute right-4 -bottom-10 transform -translate-y-1/2 bg-white bg-opacity-50 hover:bg-opacity-75 text-gray-800 font-bold py-2 px-4 rounded-full shadow-lg transition-all duration-200 hidden md:block"
-          onClick={nextSlide}
-        >
-          <ChevronRight className="h-6 w-6" />
-        </button>
       </div>
     </div>
   );
